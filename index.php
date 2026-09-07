@@ -1,5 +1,5 @@
 <?php
- // Sarcina 1
+ // Sarcina 2
     $denumireProiect = "Sistem de gestionare a unui magazin de uleiuri vegetale";
     $autor = "Ursan Daniel";
     $grupa = "PAPP-231";
