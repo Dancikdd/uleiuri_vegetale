@@ -5,12 +5,16 @@
     $grupa = "PAPP-231";
     $entitate = "Student";
     $descriere = "O aplicatie care va gestiona produsele ca uleiuri vegetale de toate tipurile";
+    const VERSION = "1.0";    
+    
+//Sarcina 3
+   $denumireUlei = "Ulei de floarea soarelui";
+   $cantitateStoc = 10;
+   $tipUlei = "Ulei vegetal";
+   $pretPeLitru = 30.99;
+   $esteBio = true;
+
+
+   
 ?>
 
-    <?php
-    echo "<h1>$denumireProiect</h1>";
-    echo "<p><strong>Autor:</strong> $autor</p>";
-    echo "<p><strong>Grupa:</strong> $grupa</p>";
-    echo "<p><strong>Entitate:</strong> $entitate</p>";
-    echo "<p><strong>Descriere:</strong> $descriere</p>";
-    ?>
