@@ -21,9 +21,9 @@ $paginaActiva = $paginaActiva ?? '';
         <span class="hamburger"></span>
     </button>
 
-    <a class="brand" href="<?= $root ?>index.php"><?= NUME_PROIECT ?></a>
+    <a class="brand" href="<?= url_cu_rol($root . 'index.php') ?>"><?= NUME_PROIECT ?></a>
 
-    <a class="icon-btn" href="<?= $root ?>pages/auth.php" aria-label="Autentificare">
+    <a class="icon-btn" href="<?= url_cu_rol($root . 'pages/auth.php') ?>" aria-label="Autentificare demonstrativă">
         <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor"
              stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <circle cx="12" cy="8" r="4"></circle>
@@ -38,15 +38,28 @@ $paginaActiva = $paginaActiva ?? '';
         <span>Meniu</span>
         <button class="icon-btn" id="menuClose" type="button" aria-label="Închide meniul">&times;</button>
     </div>
-    <ul>
-        <?php foreach (PAGINI as $cheie => $pagina): ?>
-            <li>
-                <a href="<?= $root . $pagina['cale'] ?>"<?= $cheie === $paginaActiva ? ' class="activ"' : '' ?>>
-                    <?= $pagina['titlu'] ?>
-                </a>
-            </li>
-        <?php endforeach; ?>
-    </ul>
+<ul>
+    <?php foreach (PAGINI as $cheie => $pagina): ?>
+
+        <li>
+            <a href="<?= url_cu_rol($root . $pagina['cale']) ?>"
+                <?php
+                if ($cheie === $paginaActiva) {
+                    echo 'class="activ"';
+                }
+                ?>>
+                <?= $pagina['titlu'] ?>
+            </a>
+        </li>
+
+    <?php endforeach; ?>
+    <?php if ($rolCurent === 'client' || $rolCurent === 'administrator'): ?>
+        <li><a href="<?= url_cu_rol($root . 'pages/contul-meu.php') ?>">Contul meu</a></li>
+    <?php endif; ?>
+    <?php if ($rolCurent === 'administrator'): ?>
+        <li><a href="<?= url_cu_rol($root . 'pages/administrare.php') ?>">Administrare</a></li>
+    <?php endif; ?>
+</ul>
 </nav>
 
 <main>

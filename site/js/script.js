@@ -29,7 +29,7 @@ function initCarusel(radacina) {
     let curent = 0;
 
     function afiseaza(index) {
-        curent = (index + slide.length) % slide.length;   // revine la început/sfârșit
+        curent = (index + slide.length) % slide.length;   
         slide.forEach((s, k) => s.classList.toggle('activ', k === curent));
         puncte.forEach((p, k) => {
             p.classList.toggle('activ', k === curent);
@@ -41,7 +41,7 @@ function initCarusel(radacina) {
     radacina.querySelector('.next').addEventListener('click', () => afiseaza(curent + 1));
     puncte.forEach((p, k) => p.addEventListener('click', () => afiseaza(k)));
 
-    // glisare cu degetul pe telefon
+
     let startX = null;
     radacina.addEventListener('touchstart', (e) => { startX = e.touches[0].clientX; }, { passive: true });
     radacina.addEventListener('touchend', (e) => {

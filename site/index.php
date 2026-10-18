@@ -1,10 +1,8 @@
 <?php
-// index.php – pagina principală: carusel + scurtă prezentare.
 $root         = '';
 $paginaActiva = 'acasa';
 $titluPagina  = 'Acasă';
 
-// Imaginile caruselului (pentru poze reale se schimbă doar calea 'img')
 $slide = [
     ['img' => 'img/floarea-soarelui.jpg', 'titlu' => 'Ulei de floarea-soarelui', 'text' => 'Rafinat, potrivit pentru prăjit și coacere.'],
     ['img' => 'img/masline.jpg',          'titlu' => 'Ulei de măsline',          'text' => 'Extravirgin, presat la rece, pentru salate.'],
