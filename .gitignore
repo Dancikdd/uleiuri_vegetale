@@ -2,3 +2,6 @@
 postman/
 laborator/
 .kilo
+.env
+.env.*
+!.env.example

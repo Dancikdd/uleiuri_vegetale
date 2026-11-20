@@ -1,0 +1,3 @@
+<FilesMatch "^\.(env|git)">
+    Require all denied
+</FilesMatch>

@@ -23,7 +23,8 @@ $paginaActiva = $paginaActiva ?? '';
 
     <a class="brand" href="<?= url_cu_rol($root . 'index.php') ?>"><?= NUME_PROIECT ?></a>
 
-    <a class="icon-btn" href="<?= url_cu_rol($root . 'pages/auth.php') ?>" aria-label="Autentificare demonstrativă">
+    <a class="icon-btn" href="<?= url_cu_rol($root . ($utilizatorCurent ? 'pages/contul-meu.php' : 'pages/auth.php')) ?>"
+       aria-label="<?= $utilizatorCurent ? 'Profilul meu' : 'Autentificare sau creare cont' ?>">
         <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor"
              stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <circle cx="12" cy="8" r="4"></circle>
@@ -40,6 +41,7 @@ $paginaActiva = $paginaActiva ?? '';
     </div>
 <ul>
     <?php foreach (PAGINI as $cheie => $pagina): ?>
+        <?php if ($cheie === 'comanda') { continue; } ?>
 
         <li>
             <a href="<?= url_cu_rol($root . $pagina['cale']) ?>"

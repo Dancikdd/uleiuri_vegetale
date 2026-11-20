@@ -15,7 +15,7 @@ require __DIR__ . '/components/header.php';
 <section class="carusel" aria-roledescription="carusel" aria-label="Produse recomandate">
     <?php foreach ($slide as $i => $s): ?>
         <figure class="slide<?= $i === 0 ? ' activ' : '' ?>">
-            <img src="<?= $s['img'] ?>" alt="<?= $s['titlu'] ?>">
+            <img src="<?= $root . $s['img'] ?>" alt="<?= $s['titlu'] ?>">
             <figcaption>
                 <h2><?= $s['titlu'] ?></h2>
                 <p><?= $s['text'] ?></p>

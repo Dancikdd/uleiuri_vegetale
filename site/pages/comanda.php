@@ -1,34 +1,119 @@
 <?php
 require_once __DIR__ . '/../components/config.php';
-$root         = '../';
+cere_roluri(['client', 'administrator']);
+$root = '../';
 $paginaActiva = 'comanda';
-$titluPagina  = 'Comandă';
-$produseDisponibile = [
-    'Ulei de floarea-soarelui',
-    'Ulei de măsline',
-    'Ulei de dovleac',
-    'Ulei de in',
-];
+$titluPagina = 'Comandă';
+$produse = [];
 $erori = [];
-$comanda = null;
+$mesajSucces = $_SESSION['request_success'] ?? null;
+unset($_SESSION['request_success']);
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array($rolCurent, ['client', 'administrator'], true)) {
-    $nume = trim(is_string($_POST['nume'] ?? null) ? $_POST['nume'] : '');
-    $email = trim(is_string($_POST['email'] ?? null) ? $_POST['email'] : '');
-    $produs = is_string($_POST['produs'] ?? null) ? $_POST['produs'] : '';
+$postedItemId = $_SERVER['REQUEST_METHOD'] === 'POST'
+    ? ($_POST['item_id'] ?? '')
+    : ($_GET['item_id'] ?? '');
+$itemId = is_string($postedItemId) ? (filter_var($postedItemId, FILTER_VALIDATE_INT) ?: 0) : 0;
+$postedQuantity = $_POST['quantity'] ?? '';
+$cantitate = is_string($postedQuantity) ? (filter_var($postedQuantity, FILTER_VALIDATE_INT) ?: 0) : 0;
 
-    if ($nume === '') {
-        $erori[] = 'Introduceți numele.';
+if (in_array($rolCurent, ['client', 'administrator'], true)) {
+    try {
+        require_once __DIR__ . '/../components/database.php';
+        $produse = database()->query(
+            'SELECT id, name, price, quantity_available
+             FROM items
+             WHERE is_active = 1 AND quantity_available > 0
+             ORDER BY name'
+        )->fetchAll();
+    } catch (Throwable $e) {
+        error_log('Request product list error: ' . $e->getMessage());
+        $erori['general'] = 'Catalogul nu este disponibil momentan.';
     }
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $erori[] = 'Introduceți o adresă de e-mail validă.';
-    }
-    if (!in_array($produs, $produseDisponibile, true)) {
-        $erori[] = 'Selectați un produs din listă.';
-    }
+}
 
-    if (!$erori) {
-        $comanda = ['nume' => $nume, 'email' => $email, 'produs' => $produs];
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    $produsAccesatDinCatalog = false;
+    foreach ($produse as $produsDisponibil) {
+        if ((int) $produsDisponibil['id'] === $itemId) {
+            $produsAccesatDinCatalog = true;
+            break;
+        }
+    }
+    if (!$produsAccesatDinCatalog) {
+        header('Location: produse.php');
+        exit;
+    }
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!in_array($rolCurent, ['client', 'administrator'], true)) {
+        http_response_code(403);
+        $erori['general'] = 'Autentificați-vă pentru a plasa o comandă.';
+    } elseif (!token_csrf_valid()) {
+        $erori['general'] = 'Formularul a expirat. Reîncărcați pagina și încercați din nou.';
+    } else {
+        if ($itemId < 1) {
+            $erori['item_id'] = 'Selectați un produs.';
+        }
+        if ($cantitate < 1 || $cantitate > 1000) {
+            $erori['quantity'] = 'Introduceți o cantitate între 1 și 1000.';
+        }
+
+        if (!$erori) {
+            try {
+                $db = database();
+                $db->beginTransaction();
+
+                $itemStmt = $db->prepare(
+                    'SELECT id, price, quantity_available
+                     FROM items
+                     WHERE id = :id AND is_active = 1
+                     FOR UPDATE'
+                );
+                $itemStmt->execute(['id' => $itemId]);
+                $item = $itemStmt->fetch();
+
+                if (!$item) {
+                    $erori['item_id'] = 'Produsul selectat nu este disponibil.';
+                } elseif ($cantitate > (int) $item['quantity_available']) {
+                    $erori['quantity'] = 'Cantitatea depășește stocul disponibil ('
+                        . (int) $item['quantity_available'] . ').';
+                }
+
+                if ($erori) {
+                    $db->rollBack();
+                } else {
+                    $requestStmt = $db->prepare(
+                        "INSERT INTO requests (user_id, status)
+                         VALUES (:user_id, 'pending')"
+                    );
+                    $requestStmt->execute(['user_id' => $utilizatorCurent['id']]);
+                    $requestId = (int) $db->lastInsertId();
+
+                    $lineStmt = $db->prepare(
+                        'INSERT INTO request_items (request_id, item_id, quantity, unit_price)
+                         VALUES (:request_id, :item_id, :quantity, :unit_price)'
+                    );
+                    $lineStmt->execute([
+                        'request_id' => $requestId,
+                        'item_id' => $itemId,
+                        'quantity' => $cantitate,
+                        'unit_price' => $item['price'],
+                    ]);
+
+                    $db->commit();
+                    $_SESSION['request_success'] = 'Comanda #' . $requestId . ' a fost înregistrată.';
+                    header('Location: comanda.php?item_id=' . $itemId);
+                    exit;
+                }
+            } catch (Throwable $e) {
+                if (isset($db) && $db->inTransaction()) {
+                    $db->rollBack();
+                }
+                error_log('Request creation error: ' . $e->getMessage());
+                $erori['general'] = 'Comanda nu a putut fi salvată momentan.';
+            }
+        }
     }
 }
 
@@ -36,53 +121,43 @@ require __DIR__ . '/../components/header.php';
 ?>
 
 <section class="pagina">
-    <h1>Formular de comandă</h1>
-    <?php if (!in_array($rolCurent, ['client', 'administrator'], true)): ?>
-        <p class="mesaj mesaj-eroare">Comenzile sunt disponibile rolurilor Client și Administrator în această demonstrație.</p>
-        <p><a href="<?= url_cu_rol('../pages/roluri.php') ?>">Selectați un rol demonstrativ</a>.</p>
-    <?php else: ?>
-        <p>Completați formularul. Datele sunt validate și afișate doar în această solicitare, fără salvare permanentă.</p>
-
-        <?php if ($erori): ?>
-            <div class="mesaj mesaj-eroare" role="alert">
-                <p>Verificați datele introduse:</p>
-                <ul>
-                    <?php foreach ($erori as $eroare): ?>
-                        <li><?= htmlspecialchars($eroare, ENT_QUOTES, 'UTF-8') ?></li>
-                    <?php endforeach; ?>
-                </ul>
-            </div>
+    <h1>Plasează o comandă</h1>
+    <?php if ($utilizatorCurent): ?>
+        <p>Comanda va fi salvată în contul <?= htmlspecialchars($utilizatorCurent['email'], ENT_QUOTES, 'UTF-8') ?> cu statutul „În așteptare”.</p>
+        <?php if ($mesajSucces): ?>
+            <p class="mesaj mesaj-succes" role="status"><?= htmlspecialchars($mesajSucces, ENT_QUOTES, 'UTF-8') ?></p>
+        <?php endif; ?>
+        <?php if (isset($erori['general'])): ?>
+            <p class="mesaj mesaj-eroare" role="alert"><?= htmlspecialchars($erori['general'], ENT_QUOTES, 'UTF-8') ?></p>
         <?php endif; ?>
 
-        <?php if ($comanda): ?>
-            <div class="mesaj mesaj-succes" role="status">
-                <h2>Comandă demonstrativă prelucrată</h2>
-                <p>Nume: <?= htmlspecialchars($comanda['nume'], ENT_QUOTES, 'UTF-8') ?></p>
-                <p>E-mail: <?= htmlspecialchars($comanda['email'], ENT_QUOTES, 'UTF-8') ?></p>
-                <p>Produs ales: <?= htmlspecialchars($comanda['produs'], ENT_QUOTES, 'UTF-8') ?></p>
-                <p>Comanda nu a fost salvată.</p>
-            </div>
-        <?php endif; ?>
-
-        <form class="formular formular-lat" action="<?= url_cu_rol('../pages/comanda.php') ?>" method="post">
-            <label for="nume">Nume</label>
-            <input type="text" id="nume" name="nume" required maxlength="100"
-                   value="<?= htmlspecialchars(is_string($_POST['nume'] ?? '') ? ($_POST['nume'] ?? '') : '', ENT_QUOTES, 'UTF-8') ?>">
-            <label for="email">E-mail</label>
-            <input type="email" id="email" name="email" required maxlength="254"
-                   value="<?= htmlspecialchars(is_string($_POST['email'] ?? '') ? ($_POST['email'] ?? '') : '', ENT_QUOTES, 'UTF-8') ?>">
-            <label for="produs">Produs dorit</label>
-            <select id="produs" name="produs" required>
+        <form class="formular formular-lat" action="comanda.php" method="post">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(token_csrf(), ENT_QUOTES, 'UTF-8') ?>">
+            <label for="item_id">Produs</label>
+            <select id="item_id" name="item_id" required>
                 <option value="">Alegeți un produs</option>
-                <?php foreach ($produseDisponibile as $numeProdus): ?>
-                    <option value="<?= htmlspecialchars($numeProdus, ENT_QUOTES, 'UTF-8') ?>"
-                        <?= (($_POST['produs'] ?? '') === $numeProdus) ? 'selected' : '' ?>>
-                        <?= htmlspecialchars($numeProdus, ENT_QUOTES, 'UTF-8') ?>
+                <?php foreach ($produse as $produs): ?>
+                    <option value="<?= (int) $produs['id'] ?>" <?= $itemId === (int) $produs['id'] ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($produs['name'], ENT_QUOTES, 'UTF-8') ?> —
+                        <?= number_format((float) $produs['price'], 2) ?> lei
+                        (stoc: <?= (int) $produs['quantity_available'] ?>)
                     </option>
                 <?php endforeach; ?>
             </select>
-            <button type="submit" class="buton">Prelucrează comanda</button>
+            <?php if (isset($erori['item_id'])): ?>
+                <small class="mesaj-eroare"><?= htmlspecialchars($erori['item_id'], ENT_QUOTES, 'UTF-8') ?></small>
+            <?php endif; ?>
+
+            <label for="quantity">Cantitate</label>
+            <input type="number" id="quantity" name="quantity" min="1" max="1000" required
+                   value="<?= $cantitate > 0 ? $cantitate : 1 ?>">
+            <?php if (isset($erori['quantity'])): ?>
+                <small class="mesaj-eroare"><?= htmlspecialchars($erori['quantity'], ENT_QUOTES, 'UTF-8') ?></small>
+            <?php endif; ?>
+
+            <button type="submit" class="buton" <?= !$produse ? 'disabled' : '' ?>>Plasează comanda</button>
         </form>
+        <p><a href="contul-meu.php">Consultă comenzile mele</a></p>
     <?php endif; ?>
 </section>
 
