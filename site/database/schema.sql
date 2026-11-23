@@ -1,5 +1,3 @@
--- Rulează după ce ai selectat schema bazei tale în MySQL Workbench.
--- InnoDB este necesar pentru cheile externe și tranzacții.
 
 CREATE TABLE IF NOT EXISTS users (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,

@@ -520,6 +520,61 @@ thead { background: var(--verde-pal); }
 .admin-request-table { min-width: 1080px !important; }
 .admin-users-table { min-width: 720px !important; }
 .admin-data-panel { scroll-margin-top: 6rem; }
+
+/* ---------- Export CSV ---------- */
+.admin-export-form { margin-bottom: 1rem; }
+.admin-export-fieldset {
+    border: 1.5px solid var(--linie);
+    border-radius: .6rem;
+    padding: .8rem 1rem;
+    background: var(--verde-pal);
+}
+.admin-export-fields {
+    display: flex;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: .7rem 1rem;
+}
+.admin-export-field {
+    display: flex;
+    flex-direction: column;
+    gap: .2rem;
+}
+.admin-export-field label {
+    font-size: .82rem;
+    font-weight: 600;
+    color: var(--slab);
+}
+.admin-export-field input[type="date"] {
+    padding: .4rem .55rem;
+    border: 1.5px solid var(--linie);
+    border-radius: .4rem;
+    font-size: .9rem;
+    font-family: inherit;
+    background: #fff;
+    color: var(--text);
+}
+.admin-export-field input[type="date"]:focus {
+    outline: 2px solid var(--verde);
+    border-color: var(--verde);
+}
+.admin-export-button {
+    padding: .45rem 1.1rem;
+    background: var(--verde);
+    color: #fff;
+    border: none;
+    border-radius: .4rem;
+    font-size: .88rem;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background .15s;
+}
+.admin-export-button:hover {
+    background: var(--verde-inchis);
+}
+
 .admin-price { white-space: nowrap; font-weight: 700; }
 .admin-text-link { color: var(--verde); font-weight: 750; text-decoration: none; white-space: nowrap; }
 .admin-text-link:hover { text-decoration: underline; }

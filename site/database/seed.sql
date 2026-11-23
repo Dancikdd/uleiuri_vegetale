@@ -1,6 +1,3 @@
--- Rulează o singură dată, după schema.sql, în schema uleiuri_vegetale.
--- Conturile demonstrative folosesc parola: Lab4Demo2026!
--- Valoarea salvată mai jos este un hash generat cu password_hash() din PHP.
 
 START TRANSACTION;
 
